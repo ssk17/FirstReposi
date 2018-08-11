@@ -1,0 +1,537 @@
+project.js --- controllers ---------------     JS  ---------------------- Papka Config za ime na Database - config.js
+ 
+const Project = require('../models').Project;
+
+module.exports = {
+    index: (req, res) => {
+        Project.findAll().then(projects => {
+            res.render('project/index', {'projects': projects})
+        })
+
+    },
+    createGet: (req, res) => {
+
+        res.render('project/create');
+    },
+    createPost: (req, res) => {
+        let arg = req.body.project;
+
+        Project.create(arg).then(() => {
+            return res.redirect("/");
+        })
+    },
+    editGet: (req, res) => {
+
+        let id = req.params.id;
+        Project.findById(id).then(project => {
+            res.render('project/edit', {'project': project});
+        })
+
+    },
+
+    editPost: (req, res) => {
+
+        let id = req.params.id;
+        let args = req.body.project;
+        Project.findById(id).then(project => {
+            project.updateAttributes(args).then(() => {
+                res.redirect('/');
+            });
+
+        })
+    },
+
+    deleteGet: (req, res) => {
+
+        let id = req.params.id;
+        Project.findById(id).then(project => {
+            res.render('project/delete', {'project': project});
+        })
+    },
+    deletePost: (req, res) => {
+
+        let id = req.params.id;
+
+        Project.findById(id).then(project => {
+            project.destroy().then(() => {
+                res.redirect('/');
+            });
+        })
+    }
+}
+
+models - project.js 
+
+
+
+const Sequelize = require('sequelize');
+
+module.exports = function (sequelize) {
+   let Project = sequelize.define('Project',{
+       title:{
+           type: Sequelize.TEXT,
+           allowNull: false,
+       },
+       description:{
+           type: Sequelize.TEXT,
+           allowNull: false,
+       },
+       budget:{
+           type: Sequelize.INTEGER,
+           allowNull: false,
+       }
+
+    }, {
+       timestamps:false
+   });
+    return Project;
+};
+
+JAVA ------------- ------------------ ----------------------
+
+Project ---------
+
+package projectrider.entity;
+
+import javax.annotation.Generated;
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+
+@Entity
+@Table(name = "projects")
+public class Project {
+
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    private Integer id;
+
+    @Column
+    @NotNull
+    private String title;
+
+    @Column
+    @NotNull
+    private String description;
+
+    @Column
+    @NotNull
+    private Integer budget;
+
+    public Project() {
+    }
+
+    public Project(String title, String description, Integer budget) {
+        this.title = title;
+        this.description = description;
+        this.budget = budget;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getBudget() {
+        return budget;
+    }
+
+    public void setBudget(Integer budget) {
+        this.budget = budget;
+    }
+}
+
+
+ProjectBindingModel ------------------------------
+
+package projectrider.bindingModel;
+
+public class ProjectBindingModel {
+
+    // TODO
+
+    private String title;
+
+    private String description;
+
+    private Integer budget;
+
+    public ProjectBindingModel() {
+    }
+
+    public ProjectBindingModel(String title, String description, Integer budget) {
+        this.title = title;
+        this.description = description;
+        this.budget = budget;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getBudget() {
+        return budget;
+    }
+
+    public void setBudget(Integer budget) {
+        this.budget = budget;
+    }
+}
+
+
+ProjectController ----------------------
+
+ package projectrider.controller;
+
+import projectrider.entity.Project;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import projectrider.bindingModel.ProjectBindingModel;
+import projectrider.repository.ProjectRepository;
+
+import java.util.List;
+
+@Controller
+public class ProjectController {
+    private final ProjectRepository projectRepository;
+
+    @Autowired
+    public ProjectController(ProjectRepository projectRepository) {
+        this.projectRepository = projectRepository;
+    }
+
+    @GetMapping("/")
+    public String index(Model model) {
+
+        List<Project> projects = projectRepository.findAll();
+        model.addAttribute("projects", projects);
+        model.addAttribute("view", "project/index");
+
+        return "base-layout";
+    }
+
+    @GetMapping("/create")
+    public String create(Model model) {
+
+        model.addAttribute("view", "project/create");
+
+        return "base-layout";
+
+    }
+
+    @PostMapping("/create")
+    public String createProcess(Model model, ProjectBindingModel projectBindingModel) {
+
+        Project project = new Project();
+        project.setTitle(projectBindingModel.getTitle());
+        project.setDescription(projectBindingModel.getDescription());
+        project.setBudget(projectBindingModel.getBudget());
+        projectRepository.saveAndFlush(project);
+
+        return "redirect:/";
+
+
+    }
+
+    @GetMapping("/edit/{id}")
+    public String edit(Model model, @PathVariable int id) {
+
+        Project project = projectRepository.findOne(id);
+        model.addAttribute("project", project);
+
+        model.addAttribute("view", "project/edit");
+
+        return "base-layout";
+    }
+
+    @PostMapping("/edit/{id}")
+    public String editProcess(@PathVariable int id, Model model, ProjectBindingModel projectBindingModel) {
+
+        Project project = projectRepository.findOne(id);
+        project.setTitle(projectBindingModel.getTitle());
+        project.setDescription(projectBindingModel.getDescription());
+        project.setBudget(projectBindingModel.getBudget());
+        projectRepository.saveAndFlush(project);
+        return "redirect:/";
+    }
+
+    @GetMapping("/delete/{id}")
+    public String delete(Model model, @PathVariable int id) {
+
+        Project project = projectRepository.findOne(id);
+        model.addAttribute("project", project);
+        model.addAttribute("view", "project/delete");
+
+        return "base-layout";
+    }
+
+    @PostMapping("/delete/{id}")
+    public String deleteProcess(@PathVariable int id, ProjectBindingModel projectBindingModel) {
+
+        Project project = projectRepository.findOne(id);
+        projectRepository.delete(project);
+        return "redirect:/";
+    }
+}
+
+
+C# --------- ----------------- ------------------
+Models Project.cs ------------
+
+namespace ProjectRider.Models
+{
+    using System.ComponentModel.DataAnnotations;
+
+    public class Project
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public string Title { get; set; }
+
+        [Required]
+        public string Description { get; set; }
+
+        [Required]
+        public int Budget { get; set; }
+    }
+}
+
+Controllers - ProjectController ---------------------------------
+
+namespace ProjectRider.Controllers
+{
+    using Microsoft.AspNetCore.Mvc;
+    using ProjectRider.Models;
+    using System.Linq;
+
+    public class ProjectController : Controller
+    {
+        private readonly ProjectDbContext database;
+
+        public ProjectController(ProjectDbContext context)
+        {
+            this.database = context;
+        }
+
+        [HttpGet]
+        [Route("")]
+        public ActionResult Index()
+        {
+            var projects = database.Projects.ToList();
+            return View(projects);
+        }
+
+        [HttpGet]
+        [Route("create")]
+        public ActionResult Create()
+        {
+            
+            return View();
+        }
+
+        [HttpPost]
+        [Route("create")]
+        public ActionResult Create(Project project)
+        {
+            database.Projects.Add(project);
+            database.SaveChanges();
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        [Route("edit/{id}")]
+        public ActionResult Edit(int id)
+        {
+            var proj = database
+                .Projects
+                .Where(p => p.Id == id)
+                .FirstOrDefault();
+            return View(proj);
+        }
+
+        [HttpPost]
+        [Route("edit/{id}")]
+        [ValidateAntiForgeryToken]
+        public ActionResult EditConfirm(int id, Project projectModel)
+        {
+            // TODO
+            
+            
+            database.Projects.Update(projectModel);
+            database.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+        [HttpGet]
+        [Route("delete/{id}")]
+        public ActionResult Delete(int id)
+        {
+            var proj = database
+               .Projects
+               .Where(p => p.Id == id)
+               .FirstOrDefault();
+            return View(proj);
+        }
+
+        [HttpPost]
+        [Route("delete/{id}")]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirm(int id, Project projectModel)
+        {
+            var proj = database
+                .Projects
+                .Where(p => p.Id == id)
+                .FirstOrDefault();
+            database.Remove(proj);
+            database.SaveChanges();
+            return RedirectToAction("Index");
+        }
+    }
+}
+
+PHP ----------- ------------pri puskane --- file path\Skeletons\PHP\bin\console ----- Arguments:   server.run
+
+Skeletons\PHP>php bin/console doctrine:database:create --if-not-exists za suzdavane na bazadanni
+
+
+ProjectController ------------------------------------  
+
+<?php
+
+namespace AppBundle\Controller;
+
+use AppBundle\Entity\Project;
+use AppBundle\Form\ProjectType;
+use AppBundle\Repository\ProjectRepository;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Request;
+
+class ProjectController extends Controller
+{
+    /**
+     * @Route("/", name="homepage")
+     */
+    public function index(Request $request)
+    {
+        $projects = $this
+            ->getDoctrine()
+            ->getRepository(Project::class )
+        ->findAll();
+
+        return $this->render("project/index.html.twig",
+            ['project'=>$projects]);
+    }
+
+    /**
+     * @Route("/create", name="create")
+     */
+    public function create(Request $request)
+    {
+        $project = new Project();
+        $form = $this->createForm(ProjectType::class, $project);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted()){
+           $em = $this ->getDoctrine()->getManager();
+           $em->persist($project);
+           $em->flush();
+
+           return $this->redirect('/');
+
+        }
+
+        return $this->render('project/create.html.twig',
+            ['form'=>$form->createView()]);
+    }
+
+    /**
+     * @Route("/edit/{id}", name="edit")
+     */
+
+    public function edit($id, Request $request)
+    {
+        $project = $this->getDoctrine()
+            ->getRepository(Project::class)->find($id);
+        $form = $this->createForm(ProjectType::class, $project);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted()){
+            $em = $this ->getDoctrine()->getManager();
+            $em->persist($project);
+            $em->flush();
+
+            return $this->redirect('/');
+
+        }
+
+        return $this->render('project/edit.html.twig',
+            ['form'=>$form->createView(), 'project'=>$project]);
+    }
+
+    /**
+     * @Route("/delete/{id}", name="delete")
+     * @param $id
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+     */
+    public function delete($id, Request $request)
+    {
+        $project = $this->getDoctrine()
+            ->getRepository(Project::class)->find($id);
+        $form = $this->createForm(ProjectType::class, $project);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted()){
+            $em = $this ->getDoctrine()->getManager();
+            $em->remove($project);
+            $em->flush();
+
+            return $this->redirect('/');
+
+        }
+
+        return $this->render('project/delete.html.twig',
+            ['form'=>$form->createView(), 'project'=>$project]);
+    }
+}
+
+
